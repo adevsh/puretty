@@ -30,3 +30,9 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+
+# puretty binaries
+/puretty
+/puretty-linux-amd64
+/puretty-linux-arm64

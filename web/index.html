@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="/xterm.css">
+  <link rel="manifest" href="/manifest.json">
+  <style>
+    html, body, #terminal {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #1e1e1e;
+    }
+    #toolbar {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #2d2d2d;
+      padding: 4px;
+      z-index: 10;
+    }
+    #toolbar.visible {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 4px;
+    }
+    #toolbar button {
+      background: #3c3c3c;
+      color: #ccc;
+      border: 2px solid #555;
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 14px;
+      font-family: Menlo, Monaco, "Courier New", monospace;
+      cursor: pointer;
+      min-width: 36px;
+      touch-action: manipulation;
+    }
+    #toolbar button:active {
+      background: #555;
+    }
+    #toolbar button.ctrl-active {
+      border-color: #f0a030;
+      color: #f0a030;
+    }
+  </style>
+</head>
+<body>
+  <div id="terminal"></div>
+  <div id="toolbar">
+    <button id="btn-ctrl" data-key="ctrl">Ctrl</button>
+    <button id="btn-esc" data-key="esc">Esc</button>
+    <button id="btn-tab" data-key="tab">Tab</button>
+    <button id="btn-up" data-key="up">&#x2191;</button>
+    <button id="btn-down" data-key="down">&#x2193;</button>
+    <button id="btn-left" data-key="left">&#x2190;</button>
+    <button id="btn-right" data-key="right">&#x2192;</button>
+  </div>
+
+  <script src="/xterm.js"></script>
+  <script src="/addon-fit.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
