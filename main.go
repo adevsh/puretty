@@ -21,7 +21,10 @@ var webFS embed.FS
 func main() {
 	addr := flag.String("addr", "127.0.0.1:7000", "listen address")
 	shell := flag.String("shell", "/bin/sh", "shell to spawn")
+	tokenTTL := flag.Duration("token-ttl", 1*time.Hour, "token rotation interval (0 disables)")
 	flag.Parse()
+
+	tm := NewTokenManager(*tokenTTL)
 
 	session, err := NewSession(*shell)
 	if err != nil {
@@ -44,7 +47,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:    *addr,
-		Handler: mux,
+		Handler: tokenMiddleware(tm, loggingMiddleware(mux)),
 	}
 
 	// Graceful shutdown on either signal or shell exit.
@@ -72,4 +75,57 @@ func main() {
 	if err := server.ListenAndServe(); err != http.ErrServerClosed {
 		log.Fatalf("server: %v", err)
 	}
+}
+
+// loggingMiddleware logs every HTTP request: method, path, remote addr, status.
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		lrw := &loggingResponseWriter{ResponseWriter: w, status: http.StatusOK}
+		next.ServeHTTP(lrw, r)
+		log.Printf("%s %s %s %d", r.Method, r.URL.RequestURI(), r.RemoteAddr, lrw.status)
+	})
+}
+
+type loggingResponseWriter struct {
+	http.ResponseWriter
+	status int
+}
+
+func (lrw *loggingResponseWriter) WriteHeader(code int) {
+	lrw.status = code
+	lrw.ResponseWriter.WriteHeader(code)
+}
+
+// tokenMiddleware enforces token access. If token auth is disabled, it
+// passes through. Valid tokens from query params are set as a cookie so
+// subsequent same-origin requests (static files, XHR) work transparently.
+func tokenMiddleware(tm *TokenManager, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token := r.URL.Query().Get("token")
+		if token == "" {
+			if cookie, err := r.Cookie("puretty_token"); err == nil {
+				token = cookie.Value
+			}
+		}
+
+		if !tm.Validate(token) {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusForbidden)
+			w.Write([]byte("<!DOCTYPE html><html><body><h1>puretty</h1><p>your token is invalid</p></body></html>"))
+			return
+		}
+
+		// Token came from query param and was valid — set cookie for subsequent requests.
+		if token != "" && r.URL.Query().Get("token") != "" {
+			http.SetCookie(w, &http.Cookie{
+				Name:     "puretty_token",
+				Value:    token,
+				Path:     "/",
+				HttpOnly: true,
+				SameSite: http.SameSiteLaxMode,
+			})
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
