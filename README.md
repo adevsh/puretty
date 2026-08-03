@@ -15,6 +15,7 @@ Flags:
 |---|---|---|
 | `-addr` | `127.0.0.1:7000` | Listen address |
 | `-shell` | `/bin/sh` | Shell to spawn |
+| `-token-ttl` | `1h` | Token rotation interval (`0` disables auth) |
 
 ## Build
 
@@ -52,10 +53,11 @@ One `embed.FS` binary bundles xterm.js (v6), addon-fit, and the PWA shell. No bu
 ```
 session.go   — OutputBuffer ring buffer, Session (PTY lifecycle)
 handlers.go  — HTTP handlers (input, output long-poll, resize)
+token.go     — token generation, rotation, constant-time validation
 main.go      — flag parsing, signal handling, graceful shutdown, embed.FS
 web/         — xterm.js vendored, app.js (XHR poll loop), PWA assets
 ```
 
 ## Security
+Token-based access via `-token-ttl`. An 8-character alphanumeric token is printed at startup and rotates every interval. Pass it via `?token=xxx` on first access — a cookie carries it for subsequent requests. Set `-token-ttl 0` to disable auth. No TLS, no rate limiting. The security model is the `-addr` flag: bind to `127.0.0.1` (or a WireGuard/Tailscale interface) and nothing else.
 
-No TLS, no auth, no rate limiting. The security model is the `-addr` flag: bind to `127.0.0.1` (or a WireGuard/Tailscale interface) and nothing else.
