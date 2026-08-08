@@ -18,6 +18,16 @@ import (
 //go:embed web
 var webFS embed.FS
 
+const errorPage = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>puretty — token required</title></head>
+<body style="font-family:system-ui,sans-serif;max-width:32rem;margin:4rem auto;padding:0 1rem">
+<h1>puretty</h1>
+<p>A token is required to access this terminal.</p>
+<p>Append <code>?token=…</code> to the URL — the token is printed to stdout when the server starts.</p>
+</body>
+</html>`
+
 func main() {
 	addr := flag.String("addr", "127.0.0.1:7000", "listen address")
 	shell := flag.String("shell", "/bin/sh", "shell to spawn")
@@ -111,7 +121,7 @@ func tokenMiddleware(tm *TokenManager, next http.Handler) http.Handler {
 		if !tm.Validate(token) {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.WriteHeader(http.StatusForbidden)
-			w.Write([]byte("<!DOCTYPE html><html><body><h1>puretty</h1><p>your token is invalid</p></body></html>"))
+			w.Write([]byte(errorPage))
 			return
 		}
 
